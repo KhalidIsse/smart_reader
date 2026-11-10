@@ -79,6 +79,7 @@ function SummarySkeleton() {
 export default function Home() {
   const [text, setText] = useState("");
   const [summary, setSummary] = useState("");
+  const [source, setSource] = useState<{ url: string; title: string } | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [stage, setStage] = useState<Stage>("idle");
   const [isPlaying, setIsPlaying] = useState(false);
@@ -97,6 +98,7 @@ export default function Home() {
 
   function resetOutput() {
     setSummary("");
+    setSource(null);
     setAudioUrl(null);
     setIsPlaying(false);
     setError("");
@@ -124,6 +126,7 @@ export default function Home() {
       const sumData = await sumRes.json();
       if (!sumRes.ok) throw new Error(sumData.error ?? "Summary failed.");
       setSummary(sumData.summary);
+      setSource(sumData.source ?? null);
 
       // 2) Audio: OpenAI SDK route (speak the summary without markdown symbols)
       setStage("audio");
@@ -154,7 +157,7 @@ export default function Home() {
       <header className="mb-8">
         <h1 className="text-3xl font-semibold tracking-tight">Smart Reader</h1>
         <p className="mt-2 max-w-prose text-zinc-600">
-          Paste an article. Get a three-point summary you can read or listen to.
+          Paste an article or a link. Get a three-point summary you can read or listen to.
         </p>
       </header>
 
@@ -163,7 +166,7 @@ export default function Home() {
         className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6"
       >
         <label htmlFor="article" className="mb-2 block text-sm font-medium text-zinc-800">
-          Article text
+          Article text or link
         </label>
         <textarea
           id="article"
@@ -172,7 +175,7 @@ export default function Home() {
           maxLength={MAX_CHARS}
           disabled={busy}
           rows={10}
-          placeholder="Paste the text you want summarized…"
+          placeholder="Paste article text, or a link like https://example.com/article"
           className="w-full resize-y rounded-lg border border-zinc-300 bg-zinc-50 px-4 py-3 text-[15px] leading-7 text-zinc-900 placeholder:text-zinc-400 focus:border-teal-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-700/25 disabled:cursor-not-allowed disabled:opacity-50"
         />
 
@@ -222,7 +225,18 @@ export default function Home() {
       {hasOutput && (
         <section className="mt-6 grid gap-6 md:grid-cols-5">
           <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm md:col-span-3">
-            <h3 className="mb-4 text-sm font-medium text-zinc-500">Summary</h3>
+            <h3 className="mb-1 text-sm font-medium text-zinc-500">Summary</h3>
+            {source && (
+              <a
+                href={source.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mb-4 block truncate text-sm text-teal-700 underline-offset-4 hover:underline"
+              >
+                From: {source.title || source.url}
+              </a>
+            )}
+            {!source && <div className="mb-3" />}
             {stage === "summarizing" ? <SummarySkeleton /> : <Summary text={summary} />}
           </div>
 
